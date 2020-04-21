@@ -101,11 +101,15 @@ def checkIndex(idx, tags):
 
 def readDiagram(d, nm):
     isa = d[0]
-    width = 16 if (isa == "T16" or isa == "T32") else 32 # todo: other 16 bit arches?
+    width = 16 if isa == "T16" else 32
     mask = list('y'*width)
     fields = {}
     unpreds = []
     d = d[1:]
+    lastidx = width
+    # For T32, fields might be given for two half-words separately
+    # (both with indices in 15..0)
+    hw1 = True if isa == "T32" else False
     for l in d:
         l = re.sub(r'\s*//.*', "", l)
         l = re.sub(r'\s+', " ", l)
@@ -125,6 +129,15 @@ def readDiagram(d, nm):
             print("Unable to parse "+loc)
             exit(1)
         wd = hi - lo + 1
+
+        if hw1 and hi > lastidx:
+            hw1 = False
+
+        lastidx = lo
+
+        if hw1 and lo < 16:
+            lo = lo + 16
+            hi = hi + 16
 
         if len(bits) == 2 and re.match("[01x!()]+$", bits[1]):
             name    = '_'
@@ -156,8 +169,11 @@ def readDiagram(d, nm):
                 unpreds.append((lo+i, 0))
 
         # print(f"{isa} {lo}+:{wd} {name} {content}")
+    mask.reverse()
     mask = ''.join(mask)
-    assert('y' not in mask) # check every bit of opcode is described
+    if 'y' in mask: # check every bit of opcode is described
+        print ("Missing opcode bits for " + nm + ": " + mask)
+        exit(1)
 
     guard = "cond != '1111'" if "cond" in fields else "TRUE"
 
