@@ -195,7 +195,11 @@ def readDiagram(d, nm):
 # patchIdents
 ########################################################################
 
-def patchIdent(x):
+def patchIdent(x, strip_prefixes):
+    for p in strip_prefixes:
+        if x.find(p) == 0:
+            x = x.replace(p, "")
+            break
     x = x.replace("/", "_")
     x = x.replace(".", "_")
     x = x.replace("-", "_")
@@ -206,7 +210,7 @@ def patchIdent(x):
 # writeASL
 ########################################################################
 
-def writeASL(f, tags):
+def writeASL(f, tags, strip_prefixes):
     ind = ' '*4 # indentation string
     #for l in tags['notice:asl']:
     #    print(l, file=f)
@@ -226,13 +230,13 @@ def writeASL(f, tags):
             if tops:
                 print(tops, file=f)
                 print(file=f)
-            print("__instruction "+patchIdent(nm), file=f)
+            print("__instruction "+patchIdent(nm, strip_prefixes), file=f)
             for (decode, diag) in decs:
                 nm = diag.replace(":diagram","")
                 if diag in tags:
                     diagram = tags[diag]
                     (isa, mask, unpreds, fields, guard) = readDiagram(diagram, nm)
-                    print(ind+'__encoding '+patchIdent(nm), file=f)
+                    print(ind+'__encoding '+patchIdent(nm, strip_prefixes), file=f)
                     print(ind*2+'__instruction_set '+isa, file=f)
                     for (name, (lo, wd)) in fields.items():
                         print(ind*2+'__field '+name+' '+str(lo)+'+:'+str(wd), file=f)
@@ -276,6 +280,8 @@ def main():
                         metavar='FILE', default='output')
     parser.add_argument('-I', '--ignores-file', help='File with lines to ignore',
                         metavar='FILE', dest='ignores')
+    parser.add_argument('-p', '--strip-prefix', help='Strip given prefix from tag labels',
+                        metavar='str', dest='strip_prefixes', action='append', default=[])
     parser.add_argument('-D', help='Define constant',
                         metavar='CONST[=0|1]', dest='defines', action='append', default=[])
     parser.add_argument('input', metavar='<file>',  nargs='+',
@@ -290,7 +296,7 @@ def main():
     tags = readTagFile(args.input, set(ignores), set(args.defines))
 
     with open(args.output, "w") as f:
-        writeASL(f, tags)
+        writeASL(f, tags, set(args.strip_prefixes))
     return
 
 if __name__ == "__main__":
