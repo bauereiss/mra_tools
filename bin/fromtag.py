@@ -207,6 +207,29 @@ def patchIdent(x, strip_prefixes):
     return x
 
 ########################################################################
+# groupInstructions
+########################################################################
+
+def groupInstructions(tags):
+    instrs = dict()
+    for (label, body) in tags.items():
+        if label.endswith(":index"):
+            (decs, post, exec) = checkIndex(readIndex(body), tags)
+            if decs == [] or not exec:
+                continue
+            nm = exec.replace(":execute", "")
+            if nm in instrs:
+                (other_exec, other_decs, other_post) = instrs[nm]
+                if exec == other_exec and post == other_post:
+                    instrs[nm] = (exec, other_decs + decs, post)
+                else:
+                    nm = label.replace(":index", "")
+                    instrs[nm] = (exec, decs, post)
+            else:
+                instrs[nm] = (exec, decs, post)
+    return instrs
+
+########################################################################
 # writeASL
 ########################################################################
 
@@ -214,58 +237,56 @@ def writeASL(f, tags, strip_prefixes):
     ind = ' '*4 # indentation string
     #for l in tags['notice:asl']:
     #    print(l, file=f)
-    for (label, body) in tags.items():
-        if label.endswith(":index"):
-            nm = label.replace(":index","")
-            (decs, post, exec) = checkIndex(readIndex(body), tags)
-            if decs == [] or not exec:
-                continue
-            exec_code = []
-            if exec in tags:
-                exec_code = tags[exec]
-            else:
-                print("Warning: Execute clause " + exec + " missing")
-            (tops, conditional, decode_top, exec_code) = demangleExecuteASL(exec_code)
+    instrs = groupInstructions(tags)
+    for (nm, (exec, decs, post)) in instrs.items():
+        if decs == [] or not exec:
+            continue
+        exec_code = []
+        if exec in tags:
+            exec_code = tags[exec]
+        else:
+            print("Warning: Execute clause " + exec + " missing")
+        (tops, conditional, decode_top, exec_code) = demangleExecuteASL(exec_code)
+        print(file=f)
+        if tops:
+            print(tops, file=f)
             print(file=f)
-            if tops:
-                print(tops, file=f)
-                print(file=f)
-            print("__instruction "+patchIdent(nm, strip_prefixes), file=f)
-            for (decode, diag) in decs:
-                nm = diag.replace(":diagram","")
-                if diag in tags:
-                    diagram = tags[diag]
-                    (isa, mask, unpreds, fields, guard) = readDiagram(diagram, nm)
-                    print(ind+'__encoding '+patchIdent(nm, strip_prefixes), file=f)
-                    print(ind*2+'__instruction_set '+isa, file=f)
-                    for (name, (lo, wd)) in fields.items():
-                        print(ind*2+'__field '+name+' '+str(lo)+'+:'+str(wd), file=f)
-                    print(ind*2+'__opcode '+"'"+mask+"'", file=f)
-                    print(ind*2+'__guard '+guard, file=f)
-                    for (ix, v) in unpreds:
-                        print(ind*2+'__unpredictable_unless '+str(ix)+" == '"+str(v)+"'", file=f)
-                    print(ind*2+'__decode', file=f)
-                    if decode in tags:
-                        decode_tops = (decode_top.splitlines() if decode_top else [])
-                        for l in (decode_tops + tags[decode]):
-                            print(ind*3+l, file=f)
-                    else:
-                        print("Warning: Decoder " + decode + " missing")
-                    print(file=f)
-
-            if post:
-                print(ind+'__postdecode', file=f)
-                if post in tags:
-                    for l in tags[post]:
-                        print(ind*2+l, file=f)
+        print("__instruction "+patchIdent(nm, strip_prefixes), file=f)
+        for (decode, diag) in decs:
+            nm = diag.replace(":diagram","")
+            if diag in tags:
+                diagram = tags[diag]
+                (isa, mask, unpreds, fields, guard) = readDiagram(diagram, nm)
+                print(ind+'__encoding '+patchIdent(nm, strip_prefixes), file=f)
+                print(ind*2+'__instruction_set '+isa, file=f)
+                for (name, (lo, wd)) in fields.items():
+                    print(ind*2+'__field '+name+' '+str(lo)+'+:'+str(wd), file=f)
+                print(ind*2+'__opcode '+"'"+mask+"'", file=f)
+                print(ind*2+'__guard '+guard, file=f)
+                for (ix, v) in unpreds:
+                    print(ind*2+'__unpredictable_unless '+str(ix)+" == '"+str(v)+"'", file=f)
+                print(ind*2+'__decode', file=f)
+                if decode in tags:
+                    decode_tops = (decode_top.splitlines() if decode_top else [])
+                    for l in (decode_tops + tags[decode]):
+                        print(ind*3+l, file=f)
                 else:
-                    print("Warning: Postdecoder " + post + " missing")
+                    print("Warning: Decoder " + decode + " missing")
                 print(file=f)
 
-            print(ind+'__execute'+(' __conditional' if conditional else ''), file=f)
-            for l in exec_code:
-                print(ind*2+l, file=f)
+        if post:
+            print(ind+'__postdecode', file=f)
+            if post in tags:
+                for l in tags[post]:
+                    print(ind*2+l, file=f)
+            else:
+                print("Warning: Postdecoder " + post + " missing")
             print(file=f)
+
+        print(ind+'__execute'+(' __conditional' if conditional else ''), file=f)
+        for l in exec_code:
+            print(ind*2+l, file=f)
+        print(file=f)
 
 
 ########################################################################
