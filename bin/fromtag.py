@@ -20,7 +20,7 @@ from asl_utils import *
 # Tagfiles
 ########################################################################
 
-def readTagFile(fns, ignores):
+def readTagFile(fns, ignores, defines):
     '''
     Read a TAGS file and split it into a dictionary
     indexed by the tag label
@@ -32,21 +32,31 @@ def readTagFile(fns, ignores):
 
         label = None
         body = []
-        ifdef_else = False
+        ifdef_ignore = False
         for l in content:
             l = l.rstrip()
             if l.startswith("TAG:"):
                 if label is not None: tags[label] = body
                 label = l[4:]
                 body = []
-                ifdef_else = False
-            elif l.startswith("#ifdef"):
-                print ("Warning: " + l)
+                ifdef_ignore = False
+            elif l.startswith("#ifdef") or l.startswith("#if defined"):
+                idx = 6 if l.startswith("#ifdef") else 11
+                const = l[idx:].strip()
+                const = const.strip("()")
+                if (const+"=0") in defines:
+                    ifdef_ignore = True
+                elif not (const in defines or (const+"=1" in defines)):
+                    print (const)
+                    print ("Warning: " + l + " (ignoring until #else or #endif)")
+            elif l.startswith("#if "):
+                print("Warning: " + l + " (ignoring until #else or #endif)")
+                ifdef_ignore = True
             elif l.startswith("#else"):
-                ifdef_else = True
+                ifdef_ignore = not ifdef_ignore
             elif l.startswith("#endif"):
-                ifdef_else = False
-            elif l in ignores or ifdef_else or l.startswith("#"):
+                ifdef_ignore = False
+            elif l in ignores or ifdef_ignore or l.startswith("#"):
                 continue
             elif l == '' and (body == [] or body[-1].rstrip() == ''):
                 continue
@@ -260,12 +270,14 @@ def writeASL(f, tags):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--verbose', '-v', help='Use verbose output',
+    parser.add_argument('-v', '--verbose', help='Use verbose output',
                         action = 'count', default=0)
-    parser.add_argument('--output',  '-o', help='File to store tag output',
+    parser.add_argument('-o', '--output',  help='File to store tag output',
                         metavar='FILE', default='output')
-    parser.add_argument('--ignores-file', '-I', help='File with lines to ignore',
+    parser.add_argument('-I', '--ignores-file', help='File with lines to ignore',
                         metavar='FILE', dest='ignores')
+    parser.add_argument('-D', help='Define constant',
+                        metavar='CONST[=0|1]', dest='defines', action='append', default=[])
     parser.add_argument('input', metavar='<file>',  nargs='+',
                         help='input file')
     args = parser.parse_args()
@@ -275,7 +287,7 @@ def main():
         with open(args.ignores, "r") as f:
             ignores = [l.rstrip() for l in f.readlines() if l.strip() != '']
 
-    tags = readTagFile(args.input, set(ignores))
+    tags = readTagFile(args.input, set(ignores), set(args.defines))
 
     with open(args.output, "w") as f:
         writeASL(f, tags)
