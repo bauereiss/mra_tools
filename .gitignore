@@ -11,3 +11,6 @@ arch.tag
 *.swp
 *.un~
 *.swo
+
+# Python files
+__pycache__

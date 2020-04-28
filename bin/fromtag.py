@@ -14,6 +14,8 @@ import sys
 from collections import defaultdict
 from itertools import takewhile
 
+from asl_utils import *
+
 ########################################################################
 # Tagfiles
 ########################################################################
@@ -204,7 +206,16 @@ def writeASL(f, tags):
             (decs, post, exec) = checkIndex(readIndex(body), tags)
             if decs == [] or not exec:
                 continue
+            exec_code = []
+            if exec in tags:
+                exec_code = tags[exec]
+            else:
+                print("Warning: Execute clause " + exec + " missing")
+            (tops, conditional, decode_top, exec_code) = demangleExecuteASL(exec_code)
             print(file=f)
+            if tops:
+                print(tops, file=f)
+                print(file=f)
             print("__instruction "+patchIdent(nm), file=f)
             for (decode, diag) in decs:
                 nm = diag.replace(":diagram","")
@@ -221,7 +232,8 @@ def writeASL(f, tags):
                         print(ind*2+'__unpredictable_unless '+str(ix)+" == '"+str(v)+"'", file=f)
                     print(ind*2+'__decode', file=f)
                     if decode in tags:
-                        for l in tags[decode]:
+                        decode_tops = (decode_top.splitlines() if decode_top else [])
+                        for l in (decode_tops + tags[decode]):
                             print(ind*3+l, file=f)
                     else:
                         print("Warning: Decoder " + decode + " missing")
@@ -236,12 +248,9 @@ def writeASL(f, tags):
                     print("Warning: Postdecoder " + post + " missing")
                 print(file=f)
 
-            print(ind+'__execute', file=f)
-            if exec in tags:
-                for l in tags[exec]:
-                    print(ind*2+l, file=f)
-            else:
-                print("Warning: Execute clause " + exec + " missing")
+            print(ind+'__execute'+(' __conditional' if conditional else ''), file=f)
+            for l in exec_code:
+                print(ind*2+l, file=f)
             print(file=f)
 
 
