@@ -23,6 +23,21 @@ ProfilingSynchronizationBarrier()
 SynchronizeContext()
     return;
 
+SpeculativeStoreBypassBarrierToPA()
+    return;
+
+SpeculativeStoreBypassBarrierToVA()
+    return;
+
+SpeculationBarrier()
+    return;
+
+TraceSynchronizationBarrier()
+    return;
+
+ConsumptionOfSpeculativeDataBarrier()
+    return;
+
 ////////////////////////////////////////////////////////////////
 // End
 ////////////////////////////////////////////////////////////////

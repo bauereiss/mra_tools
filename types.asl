@@ -20,8 +20,6 @@ ReservedEncoding();
 boolean IRQPending();
 boolean FIQPending();
 
-constant integer LOG2_TAG_GRANULE=4;
-constant integer TAG_GRANULE=2 ^ LOG2_TAG_GRANULE;
 // These declarations have to be manually inserted into arch.asl after extraction.
 // Insert them before the declaration of MemTag.
 // bits(4) _MemTag[AddressDescriptor desc];

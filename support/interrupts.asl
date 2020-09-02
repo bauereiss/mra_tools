@@ -6,17 +6,22 @@
 ////////////////////////////////////////////////////////////////
 
 boolean __PendingPhysicalSError;
+boolean __PendingVirtualSError;
 boolean __PendingInterrupt;
 
 __ResetInterruptState()
     __PendingPhysicalSError = FALSE;
     __PendingInterrupt = FALSE;
 
-boolean InterruptPending()
-    return __PendingInterrupt;
-
 SendEvent()
-    assert FALSE;
+    SendEventLocal();
+    return;
+
+boolean InsertIESBBeforeException(bits(2) el)
+    return FALSE;
+
+SynchronizeErrors()
+    return;
 
 SetInterruptRequestLevel(InterruptID id, signal level)
     assert FALSE;
@@ -40,15 +45,34 @@ ClearPendingPhysicalSError()
     __PendingPhysicalSError = FALSE;
     return;
 
-boolean SErrorPending()
-    // todo: can there be a pending virtual SError?
+boolean IsPhysicalSErrorPending()
     return __PendingPhysicalSError;
+
+boolean IsSynchronizablePhysicalSErrorPending()
+    return FALSE; // TODO
+
+__SetPendingVirtualSError()
+    __PendingVirtualSError = TRUE;
+    return;
+
+ClearPendingVirtualSError()
+    __PendingVirtualSError = FALSE;
+    return;
+
+boolean IsVirtualSErrorPending()
+    return __PendingVirtualSError;
 
 TakeUnmaskedPhysicalSErrorInterrupts(boolean iesb_req)
     assert FALSE;
 
 TakeUnmaskedSErrorInterrupts()
     assert FALSE;
+
+boolean IRQPending()
+    return FALSE;
+
+boolean FIQPending()
+    return FALSE;
 
 ////////////////////////////////////////////////////////////////
 // End

@@ -83,9 +83,6 @@ integer ThisInstrLength()
 bits(4) AArch32.CurrentCond()
     return __currentCond;
 
-bits(N) ThisInstrAddr()
-    return _PC[0 +: N];
-
 bits(N) NextInstrAddr()
     return (_PC + (ThisInstrLength() DIV 8))[N-1:0];
 

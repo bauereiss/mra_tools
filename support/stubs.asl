@@ -17,23 +17,20 @@ AArch64.ResetControlRegisters(boolean cold_reset)
 AArch64.ResetSystemRegisters(boolean cold_reset)
     return;
 
-ResetExternalDebugRegisters(boolean cold_reset)
-    return;
-
 
 bits(64) AArch32.SysRegRead64(integer cp_num, bits(32) instr)
     assert FALSE;
     return Zeros(64);
-
-boolean AArch32.SysRegReadCanWriteAPSR(integer cp_num, bits(32) instr)
-    assert FALSE;
-    return FALSE;
 
 bits(32) AArch32.SysRegRead(integer cp_num, bits(32) instr)
     assert FALSE;
     return Zeros(32);
 
 bits(64) AArch32.SysRegRead64(integer cp_num, bits(32) instr)
+    assert FALSE;
+    return Zeros(64);
+
+bits(64) AArch64.SysRegRead(integer op0, integer op1, integer crn, integer crm, integer op2)
     assert FALSE;
     return Zeros(64);
 

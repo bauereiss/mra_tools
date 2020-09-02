@@ -88,9 +88,19 @@ _MemTag[AddressDescriptor desc] = bits(4) value
     assert FALSE;
     return;
 
-boolean IsNonTagCheckedInstruction()
-    assert FALSE;
-    return FALSE;
+bits(4) _MemTag[AddressDescriptor desc, AccessDescriptor accdesc]
+    return _MemTag[desc];
+
+_MemTag[AddressDescriptor desc, AccessDescriptor accdesc] = bits(4) value
+    _MemTag[desc] = value;
+
+boolean __TagCheckedInstruction;
+
+SetTagCheckedInstruction(boolean checked)
+    __TagCheckedInstruction = checked;
+
+boolean IsTagCheckedInstruction()
+    return __TagCheckedInstruction;
 
 SetNotTagCheckedInstruction(boolean unchecked)
     assert FALSE;
@@ -103,6 +113,10 @@ bits(4) _ChooseRandomNonExcludedTag(bits(16) exclude)
 (bits(64), integer) ImpDefTagArrayStartAndCount(bits(64) address)
     assert FALSE;
     return (Zeros(64), 0);
+
+boolean IsBlockDescriptorNTBitValid()
+    assert FALSE;
+    return FALSE;
 
 ////////////////////////////////////////////////////////////////
 // End
